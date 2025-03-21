@@ -5,6 +5,11 @@
 ## 📺 Watch Full Project Demo 
 👉 [🎬 Watch on YouTube](https://youtu.be/4wUpkfrDFEE?si=HMcaiLjyK9LyLbmZ)
 
+ScreenShots:-
+![Image Alt](https://github.com/Nareshmagatham/joborbit/blob/205ce12d09a158b2172261b2b444221648d7b9e8/Screenshot%202025-03-21%20141052.png).
+![Image Alt](https://github.com/Nareshmagatham/joborbit/blob/205ce12d09a158b2172261b2b444221648d7b9e8/Screenshot%202025-03-21%20141151.png).
+
+
 ## 🌟 Features
 ✅ Role-Based Login (Job Seeker / Employer)  
 ✅ Real-Time Job Posting & Fetching  
