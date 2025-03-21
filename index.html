@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JobOrbit</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Roboto', sans-serif; background: #f9f9f9; color: #333; padding: 20px; }
+    h1, h2 { text-align: center; color: #0077cc; }
+    .card { text-align: center; background: #fff; padding: 20px; margin: 20px auto; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 600px; }
+    button { padding: 10px 20px; background: #0077cc; color: white; border: none; border-radius: 6px; cursor: pointer; }
+    button:hover { background: #005fa3; }
+    input { padding: 10px; width: 90%; margin: 10px auto; display: block; border-radius: 6px; border: 1px solid #ccc; }
+    .job-card { background: #e8f4fd; padding: 15px; margin: 10px 0; border-radius: 8px; }
+    .job-card h3 { margin: 0; }
+    .hidden { display: none; }
+  </style>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="logo-container">
+    <img src="./assets/logo.png" alt="JobOrbit Logo" onclick="reloadPage()">
+  </div>
+  
+  
+  <h1>JobOrbit</h1>
+  <div id="about-us" class="card">
+    <h2>About Us</h2>
+    <p>
+      Welcome to <strong>JobOrbit</strong> — your one-stop platform designed to simplify the recruitment journey. 
+      Whether you're a job seeker aiming for your dream role or an employer searching for the perfect candidate, 
+      JobOrbit connects talent and opportunity effortlessly. Our mission is to make hiring and job hunting easy, 
+      transparent, and effective for everyone.
+    </p>
+  </div>
+  
+  <div class="card" id ="first-id">
+    <h2>Select Role</h2>
+    <button id="jobSeekerBtn">I'm a Job Seeker</button>
+    <button id="employerBtn">I'm an Employer</button>
+  </div>
+
+  <div id="auth-section" class="card hidden">
+    <h2>Register / Login</h2>
+    <input type="email" id="loginEmail" placeholder="Email">
+    <input type="password" id="loginPassword" placeholder="Password">
+    <button id="registerBtn">Register</button>
+    <button id="loginBtn">Login</button>
+    <button id="logoutBtn">Logout</button>
+    <p id="auth-status"></p>
+  </div>
+
+  <div id="post-job-section" class="card hidden">
+    <h2>Post a Job</h2>
+    <input type="text" id="jobTitle" placeholder="Job Title">
+    <input type="text" id="jobDesc" placeholder="Job Description">
+    <input type="text" id="jobLocation" placeholder="Location">
+    <button id="postBtn">Post Job</button>
+    <p id="job-post-status"></p>
+  </div>
+  <div id="edit-section" class="card hidden">
+    <h2>Edit Job</h2>
+    <input type="text" id="editTitle" placeholder="Job Title">
+    <input type="text" id="editDesc" placeholder="Job Description">
+    <input type="text" id="editLocation" placeholder="Location">
+    <button onclick="updateJob()">Update Job</button>
+    <p id="editStatus" style="color:green; font-weight:bold;"></p>
+  </div>
+  
+  <div id="search-jobs-section" class=" hidden">
+  
+    <h2>Available Jobs</h2>
+    <p id="avail-status"></p>
+    <input type="text" id="searchInput" placeholder="Search by title or location">
+    <div id="jobs-list">
+    </div>
+  </div>
+
+  <div id="application-section" class="card hidden" style="text-align: left;">
+    <h2>Application Form</h2>
+  
+    <label>Enter Your Mobile Number</label>
+    <input type="number" id="mobile" placeholder="Enter your mobile number">
+  
+    <label>Enter Your Email ID</label>
+    <input type="email" id="appEmail" placeholder="Enter your email">
+  
+    <label>Are you a Fresher?</label>
+    <select id="fresher" onchange="handleFresher()">
+      <option value="">Select</option>
+      <option value="Yes">Yes</option>
+      <option value="No">No</option>
+    </select>
+  
+    <div id="backlog-section" class="hidden">
+      <label>Do you have any Backlogs?</label>
+      <select id="backlogs" onchange="checkBacklogs()">
+        <option value="">Select</option>
+        <option value="Yes">Yes</option>
+        <option value="No">No</option>
+      </select>
+  
+      <div id="backlog-count-section" class="hidden">
+        <label>Enter number of backlogs (Only 2 is Accpetable):</label>
+        <input type="number" id="backlogCount">
+      </div>
+    </div>
+  
+    <div id="experience-section" class="hidden">
+      <label>How many years of experience do you have?</label>
+      <input type="number" id="experienceYears" placeholder="Enter years of experience">
+    </div>
+  
+    <div id="relocate-section" class="hidden">
+      <label>Are you okay to relocate?</label>
+      <select id="relocate">
+        <option value="">Select</option>
+        <option value="Yes">Yes</option>
+        <option value="No">No</option>
+      </select>
+    </div>
+  
+    <label>Paste your Resume Drive Link:</label>
+    <input type="url" id="resumeLink" placeholder="https://drive.google.com/your-resume-link">
+  
+    <button onclick="submitApplication()">Submit Application</button>
+  
+    <p id="confirmation" style="color:green; font-weight:bold;"></p>
+  </div>
+  
+  <!-- Admin Dashboard Section -->
+<div id="admin-dashboard" class="card hidden">
+  <h2>Admin Dashboard</h2>
+  <button onclick="loadAdminJobs()">Load All Jobs</button>
+  <div id="admin-jobs-list"></div>
+</div>
+
+  
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js";
+    import { getFirestore, collection, addDoc, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
+    const firebaseConfig = {
+  apiKey: "AIzaSyAiC9z2r1i7hLtHSj1lKAt34UHtbNIc61A",
+  authDomain: "jobboard-e500d.firebaseapp.com",
+  projectId: "jobboard-e500d",
+  storageBucket: "jobboard-e500d.firebasestorage.app",
+  messagingSenderId: "360883607004",
+  appId: "1:360883607004:web:30a4cd5100225d815e6b19",
+  measurementId: "G-RFBJ0VPR76"
+};
+let editingJobId = "";
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let userRole = "";
+
+    document.getElementById('jobSeekerBtn').onclick = () => {
+      userRole = "seeker";
+      document.getElementById('auth-section').classList.remove('hidden');
+      document.getElementById('about-us').classList.add('hidden');
+    };
+
+    document.getElementById('employerBtn').onclick = () => {
+      userRole = "employer";
+      document.getElementById('auth-section').classList.remove('hidden');
+      document.getElementById('about-us').classList.add('hidden');
+    };
+    if (userRole === "admin") {
+  document.getElementById('admin-dashboard').classList.remove('hidden');
+}
+
+
+    document.getElementById('registerBtn').onclick = () => {
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+      createUserWithEmailAndPassword(auth, email, password)
+        .then(() => { document.getElementById('auth-status').innerText = "Registered Successfully, Now Login Please!!!";
+          document.getElementById('auth-status').style.color ='green';
+          document.getElementById('first-id').classList.add('hidden');
+         })
+        .catch(e => { document.getElementById('auth-status').innerText = e.message; });
+    };
+
+    document.getElementById('loginBtn').onclick = () => {
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+      signInWithEmailAndPassword(auth, email, password)
+        .then(() => {
+          document.getElementById('first-id').classList.add('hidden');
+          document.getElementById('auth-status').innerText = "Login Success, Welcome to JobOrbit";
+          document.getElementById('auth-status').style.color = 'green';
+          document.getElementById('auth-section').classList.add('hidden');
+          showRoleUI();
+        })
+        .catch(e => { document.getElementById('auth-status').innerText = e.message; });
+    };
+
+    document.getElementById('logoutBtn').onclick = () => {
+      signOut(auth).then(() => location.reload());
+    };
+
+    function showRoleUI() {
+      if (userRole === "employer") {
+        document.getElementById('avail-status').innerText="Welcome to JobOrbit, Connecting with top talent made easy. Start recruiting now!";
+        document.getElementById('avail-status').style.color='green';
+        document.getElementById('post-job-section').classList.remove('hidden');
+      }
+      document.getElementById('search-jobs-section').classList.remove('hidden');
+      fetchJobsAPI(); 
+      if (userRole === "employer") {
+  jobsHTML += `<button onclick="deleteJob('${doc.id}')">Delete</button>`;
+}
+    }
+    
+
+    document.getElementById('postBtn').onclick = async () => {
+      const title = document.getElementById('jobTitle').value;
+      const desc = document.getElementById('jobDesc').value;
+      const location = document.getElementById('jobLocation').value;
+      
+
+      await addDoc(collection(db, "jobs"), { title, description: desc, location, postedAt: new Date() });
+      document.getElementById('postBtn').style.backgroundColor = 'green';
+      document.getElementById('postBtn').style.color ='black'
+      document.getElementById('postBtn').innerText ='Job Posted'
+      document.getElementById('job-post-status').innerText = "Posted Successfully!";
+      document.getElementById('job-post-status').style.color='green';
+    };
+
+    function fetchJobsAPI() {
+  const jobsRef = collection(db, "jobs");
+
+  onSnapshot(jobsRef, (snapshot) => {
+    let jobsHTML = '';
+
+    snapshot.forEach((doc) => {
+      const job = doc.data();
+      console.log("Job Data:", job);  
+
+      if (!job.title || !job.description || !job.location) {
+        console.error("Missing fields in Firestore:", job);
+        return;
+      }
+      const datePosted = job.postedAt.toDate().toLocaleString();
+      jobsHTML += `
+  <div class="job-card">
+    <h3>${job.title}</h3>
+    <p>${job.description}</p>
+    <p><strong>Location:</strong> ${job.location}</p>
+    <p><strong>Posted On:</strong> ${datePosted}</p>
+
+    ${userRole === 'employer' 
+      ? `<button onclick="deleteJob('${doc.id}')">Delete</button>
+         <button onclick="editJob('${doc.id}')">Edit</button>` 
+      : `<button onclick="openApplication('${job.location}')">Apply</button>`}
+  </div>
+`;
+
+    });
+
+    document.getElementById('jobs-list').innerHTML = jobsHTML;
+  });
+}
+window.editJob = async (jobId) => {
+  editingJobId = jobId;
+  document.getElementById('edit-section').classList.remove('hidden');
+
+  const jobDoc = await getDoc(doc(db, "jobs", jobId));
+  const job = jobDoc.data();
+
+  document.getElementById('editCompany').value = job.companyName;
+  document.getElementById('editDesc').value = job.description;
+  document.getElementById('editLocation').value = job.location;
+};
+window.updateJob = async () => {
+  const updatedData = {
+    title: document.getElementById('editTitle').value,
+    description: document.getElementById('editDesc').value,
+    location: document.getElementById('editLocation').value,
+  };
+
+  await updateDoc(doc(db, "jobs", editingJobId), updatedData);
+  document.getElementById('editStatus').innerText = "✅ Job updated successfully!";
+  fetchJobsAPI();  // Refresh the jobs
+  document.getElementById('edit-section').classList.add('hidden');
+};
+
+
+import { deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
+
+window.deleteJob = async (jobId) => {
+  const confirmDelete = confirm("Are you sure you want to delete this job?");
+  if (confirmDelete) {
+    await deleteDoc(doc(db, "jobs", jobId));
+    alert("Job deleted successfully!");
+    fetchJobsAPI(); 
+  }
+};
+
+
+
+    
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+      const keyword = e.target.value.toLowerCase();
+      const jobs = document.querySelectorAll('.job-card');
+      jobs.forEach(job => {
+        const text = job.innerText.toLowerCase();
+        job.style.display = text.includes(keyword) ? 'block' : 'none';
+      });
+    });
+
+    function reloadPage() {
+  location.reload();
+}
+window.openApplication = (location) => {
+  document.getElementById('search-jobs-section').classList.add('hidden');
+  document.getElementById('post-job-section').classList.add('hidden');
+  document.getElementById('application-section').classList.remove('hidden');
+  document.getElementById('locationText').innerText = `Job Location: ${location}`;
+};
+
+window.handleFresher = () => {
+  const fresher = document.getElementById('fresher').value;
+  document.getElementById('backlog-section').classList.add('hidden');
+  document.getElementById('experience-section').classList.add('hidden');
+  document.getElementById('relocate-section').classList.add('hidden');
+
+  if (fresher === 'Yes') {
+    document.getElementById('backlog-section').classList.remove('hidden');
+  } else if (fresher === 'No') {
+    document.getElementById('experience-section').classList.remove('hidden');
+    document.getElementById('relocate-section').classList.remove('hidden');
+  }
+};
+
+window.checkBacklogs = () => {
+  const backlogs = document.getElementById('backlogs').value;
+  if (backlogs === 'Yes') {
+    document.getElementById('backlog-count-section').classList.remove('hidden');
+    document.getElementById('relocate-section').classList.remove('hidden');
+  } else {
+    document.getElementById('backlog-count-section').classList.add('hidden');
+    document.getElementById('relocate-section').classList.remove('hidden');
+  }
+};
+
+
+window.submitApplication = () => {
+  const mobile = document.getElementById('mobile').value;
+  const email = document.getElementById('appEmail').value;
+  const fresher = document.getElementById('fresher').value;
+  const backlogs = document.getElementById('backlogs')?.value;
+  const backlogCount = document.getElementById('backlogCount')?.value;
+  const experience = document.getElementById('experienceYears')?.value;
+  const relocate = document.getElementById('relocate')?.value;
+  const resume = document.getElementById('resumeLink').value;
+
+  if (!mobile || !email || !fresher || !resume) {
+    alert('❌ Please fill all required fields');
+    return;
+  }
+
+  if (fresher === 'Yes' && backlogs === 'Yes' && (parseInt(backlogCount) < 2)) {
+    alert('❌ Minimum 2 backlogs required');
+    return;
+  }
+
+  document.getElementById('confirmation').innerText =
+    '✅ Application Submitted Successfully! We are processing your application.';
+
+  // ✅ Auto-redirect after 3 seconds
+  setTimeout(() => {
+    document.getElementById('application-section').classList.add('hidden');
+    document.getElementById('search-jobs-section').classList.remove('hidden');
+    fetchJobsAPI(); // Optional: Refresh jobs again if needed
+  }, 3000);
+};
+
+
+window.loadAdminJobs = async () => {
+  const jobsRef = collection(db, "jobs");
+  const snapshot = await getDocs(jobsRef);
+  let adminHTML = '';
+  snapshot.forEach((doc) => {
+    const job = doc.data();
+    adminHTML += `
+      <div class="job-card">
+        <h3>${job.title}</h3>
+        <p>${job.description}</p>
+        <p><strong>Location:</strong> ${job.location}</p>
+        <button onclick="deleteJob('${doc.id}')">Delete Job</button>
+      </div>
+    `;
+  });
+  document.getElementById('admin-jobs-list').innerHTML = adminHTML;
+};
+  </script>
+</body>
+</html>
